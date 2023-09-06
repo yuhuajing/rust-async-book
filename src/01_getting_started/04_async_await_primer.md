@@ -2,10 +2,7 @@
 
 `async`/`.await` is Rust's built-in tool for writing asynchronous functions
 that look like synchronous code. `async` transforms a block of code into a
-state machine that implements a trait called `Future`. Whereas calling a
-blocking function in a synchronous method would block the whole thread,
-blocked `Future`s will yield control of the thread, allowing other
-`Future`s to run.
+state machine that implements a trait called `Future`. 与在同步方法中调用阻塞函数会阻塞整个线程不同，被阻塞的 Future 会让出线程的控制权，允许其他 Future 运行。这使得异步代码可以更高效地处理并发任务，而不会阻塞整个线程。
 
 Let's add some dependencies to the `Cargo.toml` file:
 
@@ -22,8 +19,23 @@ async fn do_something() { /* ... */ }
 The value returned by `async fn` is a `Future`. For anything to happen,
 the `Future` needs to be run on an executor.
 
+异步函数返回的是一个 future 的 block，要调用封装的future 返回数据的话，需要执行该block。
+
 ```rust,edition2018
 {{#include ../../examples/01_04_async_await_primer/src/lib.rs:hello_world}}
+```
+
+或者通过 tokio 启动多线程 `tokio = { version = "1", features = ["macros", "rt-multi-thread"] }`
+```rust
+
+async fn hello_world() {
+    println!("hello, world!");
+}
+
+#[tokio::main]
+async fn main() {
+    let _future = hello_world().await; // Nothing is printed
+}
 ```
 
 Inside an `async fn`, you can use `.await` to wait for the completion of

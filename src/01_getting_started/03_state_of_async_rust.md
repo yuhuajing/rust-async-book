@@ -1,22 +1,13 @@
 # The State of Asynchronous Rust
 
-Parts of async Rust are supported with the same stability guarantees as
-synchronous Rust. Other parts are still maturing and will change
-over time. With async Rust, you can expect:
+异步 Rust 的某些部分具有与同步 Rust 相同的稳定性保证。其他部分仍在不断发展，将随时间而改变。使用异步 Rust，您可以期望：
 
-- Outstanding runtime performance for typical concurrent workloads.
-- More frequent interaction with advanced language features, such as lifetimes
-  and pinning.
-- Some compatibility constraints, both between sync and async code, and between
-  different async runtimes.
-- Higher maintenance burden, due to the ongoing evolution of async runtimes
-  and language support.
+- 针对典型并发工作负载的出色运行时性能。
+- 更频繁地涉及高级语言功能，例如生命周期（lifetimes）和固定（pinning）。
+- 一些兼容性限制，既在同步和异步代码之间，也在不同的异步运行时之间。
+- 更高的维护负担，由于异步运行时和语言支持的不断演进。
 
-In short, async Rust is more difficult to use and can result in a higher
-maintenance burden than synchronous Rust,
-but gives you best-in-class performance in return.
-All areas of async Rust are constantly improving,
-so the impact of these issues will wear off over time.
+简而言之，异步 Rust 比同步 Rust 更难使用，可能导致更大的维护负担，但作为回报，它为您提供了最佳性能。异步 Rust 的所有领域都在不断改进，因此这些问题的影响会随着时间而减小。
 
 ## Language and library support
 
@@ -46,24 +37,15 @@ result, which can be more verbose.
 
 ## Compiling and debugging
 
-For the most part, compiler- and runtime errors in async Rust work
-the same way as they have always done in Rust. There are a few
-noteworthy differences:
+大部分情况下，异步 Rust 中的编译器和运行时错误的工作方式与 Rust 中一直如此的方式相同。但有一些值得注意的区别：
 
 ### Compilation errors
 
-Compilation errors in async Rust conform to the same high standards as
-synchronous Rust, but since async Rust often depends on more complex language
-features, such as lifetimes and pinning, you may encounter these types of
-errors more frequently.
+异步 Rust 中的编译错误遵循与同步 Rust 相同的高标准，但由于异步 Rust 通常依赖于更复杂的语言特性，如生命周期和固定，您可能会更频繁地遇到这些类型的错误。
 
 ### Runtime errors
 
-Whenever the compiler encounters an async function, it generates a state
-machine under the hood. Stack traces in async Rust typically contain details
-from these state machines, as well as function calls from
-the runtime. As such, interpreting stack traces can be a bit more involved than
-it would be in synchronous Rust.
+每当编译器遇到异步函数时，它在底层生成一个状态机。异步 Rust 中的堆栈跟踪通常包含来自这些状态机的详细信息，以及来自运行时的函数调用。因此，在异步 Rust 中解释堆栈跟踪可能比同步 Rust 更复杂一些。
 
 ### New failure modes
 
@@ -76,14 +58,9 @@ avoid these pitfalls.
 
 ## Compatibility considerations
 
-Asynchronous and synchronous code cannot always be combined freely.
-For instance, you can't directly call an async function from a sync function.
-Sync and async code also tend to promote different design patterns, which can
-make it difficult to compose code intended for the different environments.
+异步和同步代码并不总是可以自由结合使用。例如，您不能直接从同步函数中调用异步函数。同步和异步代码也倾向于促进不同的设计模式，这可能会使得将代码组合用于不同环境变得困难。
 
-Even async code cannot always be combined freely. Some crates depend on a
-specific async runtime to function. If so, it is usually specified in the
-crate's dependency list.
+即使异步代码也不能总是自由结合使用。某些 crate 依赖于特定的异步运行时才能正常工作。如果是这样，通常会在 crate 的依赖列表中指定。
 
 These compatibility issues can limit your options, so make sure to
 research which async runtime and what crates you may need early.
@@ -92,15 +69,6 @@ much about compatibility.
 
 ## Performance characteristics
 
-The performance of async Rust depends on the implementation of the
-async runtime you're using.
-Even though the runtimes that power async Rust applications are relatively new,
-they perform exceptionally well for most practical workloads.
+异步 Rust 的性能取决于您使用的异步运行时的实现。尽管支持异步 Rust 应用程序的运行时相对较新，但它们在大多数实际工作负载下表现得非常出色。
 
-That said, most of the async ecosystem assumes a _multi-threaded_ runtime.
-This makes it difficult to enjoy the theoretical performance benefits
-of single-threaded async applications, namely cheaper synchronization.
-Another overlooked use-case is _latency sensitive tasks_, which are
-important for drivers, GUI applications and so on. Such tasks depend
-on runtime and/or OS support in order to be scheduled appropriately.
-You can expect better library support for these use cases in the future.
+尽管如此，异步生态系统中的大多数都假定了一个 多线程 运行时。这使得难以享受单线程异步应用程序的理论性能优势，即更便宜的同步。另一个被忽视的用例是 延迟敏感任务，对于驱动程序、GUI 应用程序等非常重要。这些任务依赖于运行时和/或操作系统的支持，以便适当地进行调度。未来您可以期望有更好的库支持来满足这些用例。

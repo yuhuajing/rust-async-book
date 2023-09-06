@@ -1,58 +1,47 @@
 # Why Async?
 
-We all love how Rust empowers us to write fast, safe software.
-But how does asynchronous programming fit into this vision?
+我们都喜欢 Rust 如何使我们能够编写快速、安全的软件。
+但是异步编程如何融入这一愿景呢？
 
-Asynchronous programming, or async for short, is a _concurrent programming model_
-supported by an increasing number of programming languages.
-It lets you run a large number of concurrent
-tasks on a small number of OS threads, while preserving much of the
-look and feel of ordinary synchronous programming, through the
-`async/await` syntax.
+异步编程，简称 async，是越来越多编程语言支持的一种并发编程模型。
+它允许你在少量操作系统线程上同时运行大量并发任务，同时保留了许多
+普通同步编程的外观和感觉，通过 `async/await` 语法来实现。
 
-## Async vs other concurrency models
+## 异步和其他并发模型
 
-Concurrent programming is less mature and "standardized" than
-regular, sequential programming. As a result, we express concurrency
-differently depending on which concurrent programming model
-the language is supporting.
-A brief overview of the most popular concurrency models can help
-you understand how asynchronous programming fits within the broader
-field of concurrent programming:
+并发编程不如常规的顺序编程那样成熟和"标准化"。因此，根据编程语言支持的并发编程模型，我们表达并发的方式可能会有所不同。简要概述最流行的并发模型可以帮助您了解异步编程如何融入更广泛的并发编程领域：
 
-- **OS threads** don't require any changes to the programming model,
-  which makes it very easy to express concurrency. However, synchronizing
-  between threads can be difficult, and the performance overhead is large.
-  Thread pools can mitigate some of these costs, but not enough to support
-  massive IO-bound workloads.
-- **Event-driven programming**, in conjunction with _callbacks_, can be very
-  performant, but tends to result in a verbose, "non-linear" control flow.
-  Data flow and error propagation is often hard to follow.
-- **Coroutines**, like threads, don't require changes to the programming model,
-  which makes them easy to use. Like async, they can also support a large
-  number of tasks. However, they abstract away low-level details that
-  are important for systems programming and custom runtime implementors.
-- **The actor model** divides all concurrent computation into units called
-  actors, which communicate through fallible message passing, much like
-  in distributed systems. The actor model can be efficiently implemented, but it leaves
-  many practical issues unanswered, such as flow control and retry logic.
+- **操作系统线程** 不需要对编程模型进行任何更改，
+这使得表达并发非常容易。然而，线程之间的同步
+可能会很困难，性能开销很大。
+线程池可以缓解一些成本，但不足以支持大规模的
+IO 密集型工作负载。
+- **事件驱动编程**, 与 回调 结合使用，可以非常
+高效，但往往会导致冗长、"非线性" 的控制流。
+数据流和错误传播通常难以跟踪
+- **协程**, 像线程一样，不需要对编程模型进行更改，
+这使得它们易于使用。像异步一样，它们也可以支持大规模
+的任务。然而，它们抽象了低级细节，这些细节对
+系统编程和自定义运行时实现非常重要。
+- **The actor model** 将所有并发计算分为称为
+Actor 的单元，它们通过容易出错的消息传递来通信，很像
+分布式系统中的情况。Actor 模型可以有效实现，
+但它留下了许多实际问题，比如流量控制和重试逻辑未解决。
 
-In summary, asynchronous programming allows highly performant implementations
-that are suitable for low-level languages like Rust, while providing
-most of the ergonomic benefits of threads and coroutines.
+总之，异步编程允许高性能的实现，
+适用于像 Rust 这样的低级语言，同时提供
+大部分线程和协程的人性化优势。
 
 ## Async in Rust vs other languages
 
-Although asynchronous programming is supported in many languages, some
-details vary across implementations. Rust's implementation of async
-differs from most languages in a few ways:
+尽管许多语言都支持异步编程，但实现细节可能因语言而异。
+Rust 的异步实现与大多数语言有一些不同之处：
 
-- **Futures are inert** in Rust and make progress only when polled. Dropping a
-  future stops it from making further progress.
-- **Async is zero-cost** in Rust, which means that you only pay for what you use.
-  Specifically, you can use async without heap allocations and dynamic dispatch,
-  which is great for performance!
-  This also lets you use async in constrained environments, such as embedded systems.
+- **Futures 是懒惰的** 只有在被轮询时才会进展。
+丢弃一个 Future 会阻止它进一步进展
+- **Async is zero-cost** 这意味着你只支付你所使用的空间资源。
+具体而言，你可以使用异步而不涉及堆分配和动态分派，这对性能很有好处！
+这还使您可以在受限制的环境中使用异步，例如嵌入式系统。
 - **No built-in runtime** is provided by Rust. Instead, runtimes are provided by
   community maintained crates.
 - **Both single- and multithreaded** runtimes are available in Rust, which have
@@ -60,67 +49,62 @@ differs from most languages in a few ways:
 
 ## Async vs threads in Rust
 
-The primary alternative to async in Rust is using OS threads, either
-directly through [`std::thread`](https://doc.rust-lang.org/std/thread/)
-or indirectly through a thread pool.
-Migrating from threads to async or vice versa
-typically requires major refactoring work, both in terms of implementation and
-(if you are building a library) any exposed public interfaces. As such,
-picking the model that suits your needs early can save a lot of development time.
+在 Rust 中异步的主要替代方案是使用操作系统线程，要么
+直接通过 [`std::thread`](https://doc.rust-lang.org/std/thread/)
+要么通过线程池间接使用。
+在线程和异步之间迁移，或者反之，
+通常需要进行重大的重构工作，无论是在实现方面，
+还是（如果您正在构建一个库）在任何公开的公共接口方面。
+因此，选择适合您需求的模型早期选择可以节省大量的开发时间
 
-**OS threads** are suitable for a small number of tasks, since threads come with
-CPU and memory overhead. Spawning and switching between threads
-is quite expensive as even idle threads consume system resources.
-A thread pool library can help mitigate some of these costs, but not all.
-However, threads let you reuse existing synchronous code without significant
-code changes—no particular programming model is required.
-In some operating systems, you can also change the priority of a thread,
-which is useful for drivers and other latency sensitive applications.
+**OS threads** 适用于少量任务，因为线程伴随着
+CPU 和内存开销。生成和切换线程
+成本相当昂贵，因为即使是空闲的线程也会消耗系统资源。
+线程可以让您重用现有的同步代码，而不需要显着的
+代码更改 - 不需要特定的编程模型。
+在某些操作系统中，还可以更改线程的优先级，
+这对于驱动程序和其他对延迟敏感的应用程序很有用。
 
-**Async** provides significantly reduced CPU and memory
-overhead, especially for workloads with a
-large amount of IO-bound tasks, such as servers and databases.
-All else equal, you can have orders of magnitude more tasks than OS threads,
-because an async runtime uses a small amount of (expensive) threads to handle
-a large amount of (cheap) tasks.
-However, async Rust results in larger binary blobs due to the state
-machines generated from async functions and since each executable
-bundles an async runtime.
+**Async** 在 CPU 和内存方面有显著减少
+开销，特别是对于具有大量 IO 密集型任务的工作负载，
+如服务器和数据库。
+其他条件相同，你可以拥有比操作系统线程多得多的任务，
+因为异步运行时使用少量（昂贵的）线程来处理
+大量（廉价的）任务。
+然而，异步 Rust 由于从异步函数生成的状态机以及
+每个可执行文件都包含一个异步运行时，因此导致了较大的二进制块
 
-On a last note, asynchronous programming is not _better_ than threads,
-but different.
-If you don't need async for performance reasons, threads can often be
-the simpler alternative.
+最后，异步编程不一定比线程更好，只是不同。
+如果您不需要异步来提高性能，线程通常
+是一个更简单的选择。
 
-### Example: Concurrent downloading
+### Example: 并发
 
-In this example our goal is to download two web pages concurrently.
-In a typical threaded application we need to spawn threads
-to achieve concurrency:
+在此示例中，我们的目标是同时下载两个网页。
+在典型的线程应用程序中，我们需要生成线程
+以实现并发：
 
 ```rust,ignore
 {{#include ../../examples/01_02_why_async/src/lib.rs:get_two_sites}}
 ```
 
-However, downloading a web page is a small task; creating a thread
-for such a small amount of work is quite wasteful. For a larger application, it
-can easily become a bottleneck. In async Rust, we can run these tasks
-concurrently without extra threads:
+然而，下载一个网页是一个小任务；为这么小的工作
+创建一个线程非常浪费。对于较大的应用程序，
+它很容易成为一个瓶颈。在异步 Rust 中，我们可以运行这些任务
+而不需要额外的线程：
 
 ```rust,ignore
 {{#include ../../examples/01_02_why_async/src/lib.rs:get_two_sites_async}}
 ```
 
-Here, no extra threads are created. Additionally, all function calls are statically
-dispatched, and there are no heap allocations!
-However, we need to write the code to be asynchronous in the first place,
-which this book will help you achieve.
+在这里，没有创建额外的线程。此外，所有函数调用都是静态的
+分派，没有堆分配！
+但是，我们需要首先编写代码以使其成为异步。
 
 ## Custom concurrency models in Rust
 
-On a last note, Rust doesn't force you to choose between threads and async.
-You can use both models within the same application, which can be
-useful when you have mixed threaded and async dependencies.
-In fact, you can even use a different concurrency model altogether,
-such as event-driven programming, as long as you find a library that
-implements it.
+最后，Rust 不会强制您选择线程或异步之间。
+您可以在同一个应用程序中使用这两种模型，这可以
+在具有混合线程和异步依赖项的情况下非常有用。
+实际上，您甚至可以使用完全不同的并发模型，
+例如事件驱动编程，只要您找到一个实现它的库。
