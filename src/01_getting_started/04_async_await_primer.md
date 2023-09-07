@@ -44,6 +44,8 @@ another `async fn`. Unlike `block_on`, `.await` doesn't block the current
 thread, but instead asynchronously waits for the future to complete, allowing
 other tasks to run if the future is currently unable to make progress.
 
+对于多个并发的的任务，通过futures 管理并发的任务
+
 For example, imagine that we have three `async fn`: `learn_song`, `sing_song`,
 and `dance`:
 
