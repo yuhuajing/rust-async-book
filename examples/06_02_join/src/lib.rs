@@ -1,77 +1,57 @@
-#![cfg(test)]
-
-struct Book;
-struct Music;
-async fn get_book() -> Book { Book }
-async fn get_music() -> Music { Music }
-
-mod naiive {
-use super::*;
-// ANCHOR: naiive
-async fn get_book_and_music() -> (Book, Music) {
-    let book = get_book().await;
-    let music = get_music().await;
-    (book, music)
-}
-// ANCHOR_END: naiive
-}
-
-mod other_langs {
-use super::*;
-// ANCHOR: other_langs
-// WRONG -- don't do this
-async fn get_book_and_music() -> (Book, Music) {
-    let book_future = get_book();
-    let music_future = get_music();
-    (book_future.await, music_future.await)
-}
-// ANCHOR_END: other_langs
-}
-
-mod join {
-use super::*;
-// ANCHOR: join
-use futures::join;
-
-async fn get_book_and_music() -> (Book, Music) {
-    let book_fut = get_book();
-    let music_fut = get_music();
-    join!(book_fut, music_fut)
-}
-// ANCHOR_END: join
-}
-
-mod try_join {
-use super::{Book, Music};
-// ANCHOR: try_join
-use futures::try_join;
-
-async fn get_book() -> Result<Book, String> { /* ... */ Ok(Book) }
-async fn get_music() -> Result<Music, String> { /* ... */ Ok(Music) }
-
-async fn get_book_and_music() -> Result<(Book, Music), String> {
-    let book_fut = get_book();
-    let music_fut = get_music();
-    try_join!(book_fut, music_fut)
-}
-// ANCHOR_END: try_join
-}
-
-mod mismatched_err {
-use super::{Book, Music};
-// ANCHOR: try_join_map_err
-use futures::{
-    future::TryFutureExt,
-    try_join,
+use async_std::task;
+use ethers::{
+    core::{
+        abi::AbiDecode,
+        types::{Address, BlockNumber, Filter, U256},
+    },
+    providers::{Middleware, Provider, StreamExt, Ws},
 };
+use eyre::Result;
+use futures::{ try_join, AsyncWriteExt};
+use futures::future::join_all;
+use std::string::String;
+use std::sync::Arc;
+use std::thread;
+use std::time::Duration;
 
-async fn get_book() -> Result<Book, ()> { /* ... */ Ok(Book) }
-async fn get_music() -> Result<Music, String> { /* ... */ Ok(Music) }
+const WETH_ADDRESS: &str = "0xff2B4721F997c242fF406a626f17df083Bd2C568";
+const WSS_URL: &str = "wss://eth.getblock.io/ab0b1aa0-b490-4dc0-9bda-817c897a4580/mainnet";
 
-async fn get_book_and_music() -> Result<(Book, Music), String> {
-    let book_fut = get_book().map_err(|()| "Unable to get book".to_string());
-    let music_fut = get_music();
-    try_join!(book_fut, music_fut)
+async fn get_ws_client() -> Provider<Ws> {
+    Provider::<Ws>::connect(WSS_URL).await.unwrap()
 }
-// ANCHOR_END: try_join_map_err
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let client = Arc::new(get_ws_client().await);
+
+
+    //getlatestblonumber(client.clone()).await?;
+    //getbalance(client.clone()).await?;
+
+    let latest_blocknumber = getlatestblonumber(client.clone());
+    let addr_balance= getbalance(client.clone());
+    try_join!(latest_blocknumber, addr_balance); //  顺序执行，等待12s后才会执行
+    Ok(())
+}
+
+async fn getbalance(client: Arc<Provider<Ws>>) -> Result<()> {
+    let from_addr: &str = "0xc175006ED9Ee10210f466a043a300789a83C7420";
+    //none is the latest blocknumber
+
+    let balance = client.get_balance(from_addr, None).await?;
+    println!("{balance}");
+    Ok(())
+}
+
+async fn getlatestblonumber(client: Arc<Provider<Ws>>) -> Result<()> {
+    let last_block = client
+        .get_block(BlockNumber::Latest)
+        .await?
+        .unwrap()
+        .number
+        .unwrap();
+    thread::sleep(Duration::from_secs(12));
+    println!("last_block: {last_block}");
+    Ok(())
 }
